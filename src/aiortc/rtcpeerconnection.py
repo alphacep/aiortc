@@ -1047,7 +1047,7 @@ class RTCPeerConnection(AsyncIOEventEmitter):
 
     def __createDtlsTransport(self) -> RTCDtlsTransport:
         # create ICE transport
-        iceGatherer = RTCIceGatherer(iceServers=self.__configuration.iceServers)
+        iceGatherer = RTCIceGatherer(iceServers=self.__configuration.iceServers, portRange=self.__configuration.portRange)
         iceGatherer.on("statechange", self.__updateIceGatheringState)
         iceTransport = RTCIceTransport(iceGatherer)
         iceTransport.on("statechange", self.__updateIceConnectionState)

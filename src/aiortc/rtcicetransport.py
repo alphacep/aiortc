@@ -92,8 +92,7 @@ def candidate_to_aioice(x: RTCIceCandidate) -> Candidate:
     )
 
 
-def connection_kwargs(servers: List[RTCIceServer]) -> Dict[str, Any]:
-    kwargs: Dict[str, Any] = {}
+def add_connection_kwargs(kwargs: Dict[str, Any], servers: List[RTCIceServer]) -> None:
 
     for server in servers:
         if isinstance(server.urls, list):
@@ -134,7 +133,14 @@ def connection_kwargs(servers: List[RTCIceServer]) -> Dict[str, Any]:
                 kwargs["turn_username"] = server.username
                 kwargs["turn_password"] = server.credential
 
-    return kwargs
+
+def add_port_range(kwargs: Dict[str, Any], portRange: Optional[str]) -> None:
+
+    if portRange is None:
+        return
+
+    start, end = portRange.split(":")
+    kwargs["ephemeral_ports"] = range(int(start), int(end))
 
 
 def parse_stun_turn_uri(uri: str) -> Dict[str, Any]:
@@ -174,14 +180,18 @@ class RTCIceGatherer(AsyncIOEventEmitter):
     exchanged in signaling.
     """
 
-    def __init__(self, iceServers: Optional[List[RTCIceServer]] = None) -> None:
+    def __init__(self, iceServers: Optional[List[RTCIceServer]] = None, portRange: Optional[str] = None) -> None:
         super().__init__()
+
+        ice_kwargs: Dict[str, Any] = {}
 
         if iceServers is None:
             iceServers = self.getDefaultIceServers()
-        ice_kwargs = connection_kwargs(iceServers)
 
-        self._connection = Connection(ice_controlling=False, ephemeral_ports=range(50000, 52000), **ice_kwargs)
+        add_connection_kwargs(ice_kwargs, iceServers)
+        add_port_range(ice_kwargs, portRange)
+
+        self._connection = Connection(ice_controlling=False, **ice_kwargs)
         self._remote_candidates_end = False
         self.__state = "new"
 

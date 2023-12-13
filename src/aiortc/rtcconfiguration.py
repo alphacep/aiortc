@@ -31,3 +31,6 @@ class RTCConfiguration:
 
     iceServers: Optional[List[RTCIceServer]] = None
     "A list of :class:`RTCIceServer` objects to configure STUN / TURN servers."
+
+    portRange: Optional[str] = None
+    "Port range for ephemeral UDP ports."
