@@ -2,7 +2,7 @@ import asyncio
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 from aioice import Candidate, Connection, ConnectionClosed
 from pyee.asyncio import AsyncIOEventEmitter
@@ -93,8 +93,7 @@ def candidate_to_aioice(x: RTCIceCandidate) -> Candidate:
     )
 
 
-def connection_kwargs(servers: list[RTCIceServer]) -> dict[str, Any]:
-    kwargs: dict[str, Any] = {}
+def add_connection_kwargs(kwargs: Dict[str, Any], servers: list[RTCIceServer]) -> None:
 
     for server in servers:
         if isinstance(server.urls, list):
@@ -135,7 +134,14 @@ def connection_kwargs(servers: list[RTCIceServer]) -> dict[str, Any]:
                 kwargs["turn_username"] = server.username
                 kwargs["turn_password"] = server.credential
 
-    return kwargs
+
+def add_port_range(kwargs: Dict[str, Any], portRange: Optional[str]) -> None:
+
+    if portRange is None:
+        return
+
+    start, end = portRange.split(":")
+    kwargs["ephemeral_ports"] = range(int(start), int(end))
 
 
 def parse_stun_turn_uri(uri: str) -> dict[str, Any]:
@@ -186,12 +192,16 @@ class RTCIceGatherer(AsyncIOEventEmitter):
         iceServers: Optional[list[RTCIceServer]] = None,
         local_username: Optional[str] = None,
         local_password: Optional[str] = None,
+        portRange: Optional[str] = None,
     ) -> None:
         super().__init__()
 
         if iceServers is None:
             iceServers = self.getDefaultIceServers()
-        ice_kwargs = connection_kwargs(iceServers)
+
+        ice_kwargs: Dict[str, Any] = {}
+        add_connection_kwargs(ice_kwargs, iceServers)
+        add_port_range(ice_kwargs, portRange)
 
         self._connection = Connection(ice_controlling=False, **ice_kwargs)
         self._remote_candidates_end = False

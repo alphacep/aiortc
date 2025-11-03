@@ -62,5 +62,8 @@ class RTCConfiguration:
     iceServers: Optional[list[RTCIceServer]] = None
     "A list of :class:`RTCIceServer` objects to configure STUN / TURN servers."
 
+    portRange: Optional[str] = None
+    "Port range for ephemeral UDP ports."
+
     bundlePolicy: RTCBundlePolicy = RTCBundlePolicy.BALANCED
     "The media-bundling policy to use when gathering ICE candidates."
